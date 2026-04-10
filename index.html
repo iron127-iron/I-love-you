@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>我喜歡妳</title>
+
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: #0d1117;
+  font-family: "微軟正黑體", Arial;
+}
+
+/* 全螢幕 */
+.card {
+  width: 100%;
+  height: 100vh;
+  background: #1f2933;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  position: relative;
+}
+
+img {
+  width: 100px;
+  margin-bottom: 15px;
+}
+
+.title {
+  font-size: 22px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #aaa;
+}
+
+/* 按鈕區 */
+.btn-area {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  margin-top: 20px;
+}
+
+button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  position: absolute;
+}
+
+.yes {
+  background: #4CAF50;
+  color: white;
+  left: 25%;
+  bottom: 40px;
+}
+
+.no {
+  background: #ff4d4d;
+  color: white;
+  right: 25%;
+  bottom: 40px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <img src="https://cdn-icons-png.flaticon.com/512/742/742751.png">
+
+  <p class="title">
+    我喜歡你❤️<br>
+    <span class="subtitle">你願意跟我在一起嗎？ 😳</span>
+  </p>
+
+  <div class="btn-area">
+    <button class="yes" onclick="yesClick()">願意</button>
+    <button class="no" id="noBtn">不願意</button>
+  </div>
+</div>
+
+<script>
+const noBtn = document.getElementById("noBtn");
+const area = document.querySelector(".btn-area");
+
+function moveButton() {
+  const maxX = area.clientWidth - noBtn.offsetWidth;
+  const maxY = area.clientHeight - noBtn.offsetHeight;
+
+  const x = Math.random() * maxX;
+  const y = Math.random() * maxY;
+
+  noBtn.style.left = x + "px";
+  noBtn.style.top = y + "px";
+}
+
+// 手機觸控
+noBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  moveButton();
+});
+
+// 電腦滑鼠
+noBtn.addEventListener("mouseover", moveButton);
+
+function yesClick() {
+  alert("我愛你 ❤️");
+}
+</script>
+
+</body>
+</html>
