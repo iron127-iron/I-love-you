@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>我喜歡妳</title>
 
 <style>
@@ -15,7 +14,6 @@ body {
   overflow: hidden;
 }
 
-/* 主畫面 */
 .card {
   width: 100%;
   height: 100vh;
@@ -35,8 +33,8 @@ img {
 
 .title {
   font-size: 22px;
-  line-height: 1.6;
   text-align: center;
+  line-height: 1.6;
 }
 
 .subtitle {
@@ -71,7 +69,7 @@ button {
   color: white;
 }
 
-/* 💖 成功畫面 */
+/* 成功畫面 */
 .success {
   position: fixed;
   top: 0;
@@ -99,7 +97,12 @@ button {
   animation: pop 0.5s ease;
 }
 
-/* 💕 愛心動畫 */
+@keyframes pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* 愛心 */
 .heart {
   position: absolute;
   font-size: 20px;
@@ -109,11 +112,6 @@ button {
 @keyframes float {
   0% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(-300px); opacity: 0; }
-}
-
-@keyframes pop {
-  0% { transform: scale(0); }
-  100% { transform: scale(1); }
 }
 </style>
 </head>
@@ -134,7 +132,6 @@ button {
   </div>
 </div>
 
-<!-- 💖 成功畫面 -->
 <div class="success" id="success">
   <h1>我愛你 ❤️</h1>
 </div>
@@ -155,43 +152,84 @@ yesBtn.style.top = "100px";
 noBtn.style.left = "160px";
 noBtn.style.top = "100px";
 
-// 😈 逃跑
+// 😈 NO 逃跑效果
 function moveAway(x, y) {
   const rect = noBtn.getBoundingClientRect();
-  const btnX = rect.left + rect.width / 2;
-  const btnY = rect.top + rect.height / 2;
+  const bx = rect.left + rect.width / 2;
+  const by = rect.top + rect.height / 2;
 
-  const dx = btnX - x;
-  const dy = btnY - y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
+  const dx = bx - x;
+  const dy = by - y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance < 120) {
+  if (dist < 120) {
     const maxX = area.clientWidth - noBtn.offsetWidth;
     const maxY = area.clientHeight - noBtn.offsetHeight;
 
     noBtn.style.left = Math.random() * maxX + "px";
     noBtn.style.top = Math.random() * maxY + "px";
 
-    noScale -= 0.1;
-    if (noScale < 0.3) noScale = 0.3;
-    noBtn.style.transform = `scale(${noScale})`;
-
+    noScale = Math.max(0.3, noScale - 0.1);
     yesScale += 0.1;
+
+    noBtn.style.transform = `scale(${noScale})`;
     yesBtn.style.transform = `scale(${yesScale})`;
   }
 }
 
-// 滑鼠 / 觸控
 document.addEventListener("mousemove", e => moveAway(e.clientX, e.clientY));
 document.addEventListener("touchmove", e => {
   moveAway(e.touches[0].clientX, e.touches[0].clientY);
 });
 
-// 💖 點 YES
-yesBtn.onclick = () => {
+// 💖 YES 按下
+yesBtn.onclick = async () => {
   success.classList.add("show");
 
-  // 愛心生成
+  const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
+
+  const embed = {
+    username: "💌 告白系統",
+    avatar_url: "https://cdn-icons-png.flaticon.com/512/742/742751.png",
+    embeds: [
+      {
+        title: "💖 告白成功",
+        description: "有人按下『願意』，戀愛成功觸發 ❤️",
+        color: 0xff4d6d,
+        thumbnail: {
+          url: "https://cdn-icons-png.flaticon.com/512/742/742751.png"
+        },
+        fields: [
+          {
+            name: "💘 結果",
+            value: "成功接受告白",
+            inline: true
+          },
+          {
+            name: "💞 狀態",
+            value: "進入戀愛模式",
+            inline: true
+          }
+        ],
+        footer: {
+          text: "Love System Notification"
+        },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  try {
+    await fetch(webhookURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(embed)
+    });
+  } catch (e) {
+    console.log("Webhook 發送失敗", e);
+  }
+
+  // 💖 愛心動畫
   setInterval(() => {
     const heart = document.createElement("div");
     heart.className = "heart";
